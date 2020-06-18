@@ -1,0 +1,242 @@
+{% extends 'base.html'%}
+{% block page_content %}
+{%load static%}
+<br>
+<div style="margin-top: 50px">
+    <div class="row">
+        <div class="col-md-2 col-lg-2 col-sm-2"></div>
+        <div class="col-md-3 col-lg-3 col-sm-3">
+            <form method="post">
+                    {% csrf_token %}
+                   <div>
+                       <label>Select year:</label>
+                       <select name="selectedYear" class="{{selected_year}}" id="selected_year">
+                           {%for year in year_list%}
+                               {%if year == selected_year %}
+                                    <option value="{{year}}" selected>{{year}}</option>
+                               {%else%}
+                                    <option value="{{year}}">{{year}}</option>
+                               {%endif%}
+                           {%endfor%}
+                       </select>
+                       <button name="query_year" class="btn btn-primary" type="submit">Query</button>
+                   </div>
+            </form>
+        </div>
+        <div class="col-md-2 col-lg-2 col-sm-2">
+            <button class="btn btn-primary" type="button" onclick="update_db()">Update Database</button>
+        </div>
+        <div class="col-md-3 col-lg-3 col-sm-3">
+            <a type="button" href="" data-toggle="modal" data-target="#add_target" class="btn btn-primary">Add target</a>
+        </div>
+        <div class="col-md-2 col-lg-2 col-sm-2"></div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-5 col-lg-5 col-sm-5"></div>
+        <div class="col-md-2 col-lg-2 col-sm-2">
+            <label style=""><b>Group:</b></label>
+            <select id="listgroup" onchange="changeData()">
+                {%for key, value in monthly_productivity_chart.items%}
+                    <option value="{{key}}">{{key}}</option>
+                {%endfor%}
+            </select>
+        </div>
+        <div class="col-md-5 col-lg-5 col-sm-5"></div>
+    </div>
+    <div class="row">
+        <div id = "barchart" style = "width: 100%; height: 500px; margin: 0; padding: 0;"></div>
+    </div>
+</div>
+
+<!--model add target-->
+<div class="modal fade" id="add_target">
+          <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <form action="" class="" method="post" onsubmit="return checkForm(this);">
+                        {% csrf_token %}
+                      <!-- Modal Header -->
+                      <div class="modal-header">
+                        <h4 class="modal-title">Add Target</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                      </div>
+                      <!-- Modal body -->
+                      <div class="modal-body">
+                          <div>
+                              <button class="btn btn-success" type="button" onclick="addrowfunction('table_target')">+</button>
+                          </div>
+                          <div class="table-responsive">
+                              <table class="table table-bordered table-hover table-sm" id="table_target">
+                                  <thead class="thead-light">
+                                  <tr>
+                                      <th>GroupUser</th>
+                                      <th>ActivitiesTask</th>
+                                      <th>Year</th>
+                                      <th>Month</th>
+                                      <th>PyS_value</th>
+                                  </tr>
+                                  </thead>
+                                  <tr>
+                                      <td>
+                                          <div class="form-group">
+                                              <select class="form-control" name="group_user" required>
+                                                 {%for key, value in monthly_productivity_chart.items%}
+                                                    <option value="{{key}}">{{key}}</option>
+                                                 {%endfor%}
+                                              </select>
+                                          </div>
+                                      </td>
+                                      <td>
+                                          <div class="form-group">
+                                              <select class="form-control" name="activity_task" required>
+                                                  <option value="Working_TI">Working TI</option>
+                                                  <option value="Completed_TI_Target">Completed TI Target</option>
+                                                  <option value="Reviewed_TI_Target">Reviewed TI Target</option>
+                                              </select>
+                                          </div>
+                                      </td>
+                                      <td>
+                                          <div class="form-group">
+                                              <select class="form-control" name="selectedYear" value="{{selected_year}}">
+                                                {%for year in year_list%}
+                                                    {%if year == selected_year %}
+                                                        <option value="{{year}}" selected>{{year}}</option>
+                                                   {%else%}
+                                                        <option value="{{year}}">{{year}}</option>
+                                                   {%endif%}
+                                                {%endfor%}
+                                            </select>
+                                          </div>
+                                      </td>
+                                      <td>
+                                          <div class="form-group">
+                                              <select class="form-control" name="selectedMonth">
+                                                  <option value="1">1</option>
+                                                  <option value="2">2</option>
+                                                  <option value="3">3</option>
+                                                  <option value="4">4</option>
+                                                  <option value="5">5</option>
+                                                  <option value="6">6</option>
+                                                  <option value="7">7</option>
+                                                  <option value="8">8</option>
+                                                  <option value="9">9</option>
+                                                  <option value="10">10</option>
+                                                  <option value="11">11</option>
+                                                  <option value="12">12</option>
+                                              </select>
+                                          </div>
+                                      </td>
+                                      <td>
+                                          <div class="form-group">
+                                              <input type="text" class="form-control" name="pys" value="0" required pattern="\d+\.*\d*">
+                                          </div>
+                                      </td>
+                                  </tr>
+                              </table>
+                          </div>
+                      </div>
+                        <!-- Modal footer -->
+                      <div class="modal-footer">
+                          <input type="hidden" name="selected_year" value="{{selected_year}}">
+                          <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                          <button name="add_target" type="submit" class="btn btn-primary">Submit</button>
+                      </div>
+                </form>
+            </div>
+            <!-- /.modal-content -->
+          </div>
+          <!-- /.modal-dialog -->
+</div>
+<script type="text/javascript" src="{% static 'css/loader.js' %}"></script>
+<script language = "JavaScript">
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(barChart);
+function changeData(){
+    barChart();
+}
+function barChart() {
+            // Define the chart to be drawn.
+            var group = document.getElementById("listgroup").value;
+            var sumlist = {{monthly_productivity_chart|safe}}
+            var data = google.visualization.arrayToDataTable(sumlist[group]);
+            var max_value = 0;
+            var col_num = sumlist[group][0].length-1; // not count first column due to month only
+            for (i = 1; i<= col_num; i++){
+                if (data.getColumnRange(i).max > max_value){
+                      max_value = data.getColumnRange(i).max;
+                }
+            }
+            // Set chart options
+            var options = {
+               title : 'Monthly Productivity chart',
+               vAxis: {
+                    title: 'PyS',
+                    maxValue: max_value+1,
+               },
+               hAxis: {title: 'Month'},
+               seriesType: 'bars',
+               series: {3: {type: 'line'}, 4: {type: 'line'}},
+               legend:'bottom',
+               bar: {
+                    groupWidth: 70
+               },
+               annotations: {
+                        alwaysOutside: true,
+                        textStyle:{
+                            fontSize: 11
+                        }
+                    },
+            };
+            // Instantiate and draw the chart.
+            var chart = new google.visualization.ComboChart(document.getElementById('barchart'));
+            chart.draw(data, options);
+}
+
+function addrowfunction(tableid) {
+          var table = document.getElementById(tableid);
+          var row = table.insertRow();
+          var cell1 = row.insertCell(0);
+          var cell2 = row.insertCell(1);
+          var cell3 = row.insertCell(2);
+          var cell4 = row.insertCell(3);
+          var cell5 = row.insertCell(4);
+          cell1.innerHTML ='<td><div class="form-group"><select class="form-control" name="group_user" required>{%for key, value in monthly_productivity_chart.items%}<option value="{{key}}">{{key}}</option>{%endfor%}</select></div></td>';
+          cell2.innerHTML ='<td><div class="form-group"><select class="form-control" name="activity_task" required><option value="Working_TI">Working TI</option><option value="Completed_TI_Target">Completed TI Target</option><option value="Reviewed_TI_Target">Reviewed TI Target</option></select></div></td>';
+          cell3.innerHTML ='<td><div class="form-group"><select class="form-control" name="selectedYear" value="{{selected_year}}">{%for year in year_list%}{%if year == selected_year %}<option value="{{year}}" selected>{{year}}</option>{%else%}<option value="{{year}}">{{year}}</option>{%endif%}{%endfor%}</select></div></td>';
+          cell4.innerHTML ='<td><div class="form-group"><select class="form-control" name="selectedMonth"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div></td>';
+          cell5.innerHTML ='<td><div class="form-group"><input type="text" class="form-control" name="pys" value="0" required pattern="\\d+\\.*\\d*"></div></td>';
+        }
+
+function update_db(){
+        var selected_year = document.getElementById("selected_year").value;
+        var form = document.createElement("form");
+        var input = document.createElement("input");
+        var hiddeninput = document.createElement("input");
+        var name_f = document.createElement("input");
+
+        form.method = "POST";
+
+        hiddeninput.type = "hidden";
+        hiddeninput.name = "csrfmiddlewaretoken";
+        hiddeninput.value = "{{ csrf_token }}";
+        form.appendChild(hiddeninput);
+
+        input.value = selected_year;
+        input.name = "selectedYear";
+        input.type = "hidden";
+        form.appendChild(input);
+
+        name_f.value = ""
+        name_f.name = "update_db";
+        name_f.type = "hidden";
+        form.appendChild(name_f);
+
+        document.body.appendChild(form);
+
+        form.submit();
+}
+</script>
+<style>
+.container {max-width: 100%; display: block;}
+</style>
+{% endblock %}

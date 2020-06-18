@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {%load static%}
+    <link rel="stylesheet" type="text/css" media="screen" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="{% static 'css/mycss.css' %}">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script
+    src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="{% static 'css/loader.js' %}"></script>
+
+
+    <nav class="navbar navbar-expand-sm navbar-dark bg-primary fixed-top" style="padding: 0px; margin: 0px;">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="{% url 'home' %}">MQB Project</a>
+            </div>
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'productivity_index' user.pk %}">Individual Productivity</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'tasks_tracking' 'tasks_tracking' user.pk %}">Tasks Tracking</a>
+                </li>
+                {%if perms.auth.view_group %}
+                <li class="nav-item active">
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle active" data-toggle="dropdown">Management</a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{% url 'tasks_management' %}">Tasks management</a>
+                            <a class="dropdown-item" href="{% url 'productivity_management' %}">Productivity management</a>
+                            <a class="dropdown-item" href="{% url 'baseline' %}">Baseline Effort</a>
+                            <a class="dropdown-item" href="{% url 'holiday' %}">Holiday</a>
+                            <a class= "dropdown-item" href="{% url 'monthly_productivity' %}">Monthly Productivity</a>
+                            <a class= "dropdown-item" href="{% url 'exportdata' %}">Export Data</a>
+                            <!--a class="dropdown-item" href="{% url 'IO_port' %}">IO port</a-->
+                        </div>
+                    </div>
+                </li>
+                {%endif%}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'about' %}" >About</a>
+                </li>
+            </ul>
+
+            <div class="navbar-custom-menu">
+                <ul class="nav navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{% url 'profile' user.pk %}">Hi {{ user.username }}!,</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{% url 'login' %}">logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{% url 'login' %}">login</a>
+                    </li>
+                {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+</head>
+<body>
+    <main>
+        <div class="container-fluid">
+            {% block page_content %}{% endblock %}
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,64 @@
+/* The side navigation menu */
+#tableEffort {
+  text-align: left;
+  font-size: 12px;
+}
+pre, ul {
+    display: inline;
+    padding: 0px;
+    margin: 0px;
+}
+li {
+    padding: 1px;
+}
+
+ul{
+    list-style-type:none;
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+ul li ul{
+    display: inline-block;
+}
+ul li:hover ul {
+    display: inline-block;
+}
+ul li ul  {
+  position: absolute;
+  width: 200px;
+  display: none;
+}
+
+ul li ul li {
+  display: block;
+}
+
+ul li ul li a {
+display: inline-block !important;
+font-size: 10px;
+}
+
+a.button_status: hover{
+    background-color: #555;
+}
+
+.Monday{
+    background-color: #b3ecff;
+}
+
+.Tuesday{
+    background-color:  #b3ffcc;
+}
+
+.Wednesday{
+    background-color:  #ffffcc;
+}
+
+.Thursday{
+    background-color:  #ffb3d9;
+}
+
+.Friday{
+    background-color:  #ffb3b3;
+}

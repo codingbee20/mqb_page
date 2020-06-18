@@ -1,0 +1,143 @@
+{% extends 'base.html'%}
+{% block page_content %}
+<br>
+<script>
+function select_all(group){
+    if ($('#'+group).is(':checked')){
+        $('.'+group).prop('checked',true);
+
+    }
+    else{
+        $('.'+group).prop('checked',false);
+    }
+};
+
+</script>
+<div style="margin-top: 50px">
+    <br>
+    <a>{{group_dict|safe}}</a>
+    <div class="row">
+        <div class="container">
+            <div>
+                <label>Select month:</label>
+                    <select id="month" value="">
+                         <option value="January">January</option>
+                         <option value="February">February</option>
+                         <option value="March">March</option>
+                         <option value="April">April</option>
+                         <option value="May">May</option>
+                         <option value="June">June</option>
+                         <option value="July">July</option>
+                         <option value="August">August</option>
+                         <option value="September">September</option>
+                         <option value="October">October</option>
+                         <option value="November">November</option>
+                         <option value="December">December</option>
+                    </select>
+                    <label>Select year:</label>
+                    <select id="year" value="">
+                         <option value="2019">2019</option>
+                         <option value="2020">2020</option>
+                         <option value="2021">2021</option>
+                         <option value="2022">2022</option>
+                         <option value="2023">2023</option>
+                         <option value="2024">2024</option>
+                         <option value="2025">2025</option>
+                    </select>
+                &nbsp;&nbsp;&nbsp;&nbsp;<button onclick="export_data()" class="btn btn-info">Export...</button>
+            </div>
+            <br>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th style="text-align: center">Username</th>
+                            <th style="text-align: center">First name</th>
+                            <th style="text-align: center">Last name</th>
+                            <th style="text-align: center">Email</th>
+                            <th style="text-align: center">Selection</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {%for group, user in groups_dict.items%}
+                        <tr style="background-color: gray">
+                            <td><b>{{group}}</b></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" id="{{group}}" onchange="select_all('{{group}}')" checked>
+                            </td>
+                        </tr>
+                            {%for u in user%}
+                            <tr>
+                                <td>{{u.username}}</td>
+                                <td>{{u.first_name}}</td>
+                                <td>{{u.last_name}}</td>
+                                <td>{{u.email}}</td>
+                                <td style="text-align: center;">
+                                    <input type="checkbox" value="{{u.id}}" class="{{group}}" id="{{group}}_{{u.id}}" checked>
+                                </td>
+                            </tr>
+                            {%endfor%}
+                        {%endfor%}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>
+
+</div>
+{{groups_dict|json_script:"groups_data"}}
+<!--Modal Delete-->
+        {%for date in holiday%}
+        <div class="modal fade" id="Delete_{{date.id}}">
+          <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post">
+                    {% csrf_token %}
+                      <div class="modal-header">
+                          <h4 class="modal-title">Delete date</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+
+                      </div>
+                      <div class="modal-body">
+                          <p><b>Do you want to delete date: {{date.date|date:'Y-m-d'}}</b></p>
+                          <input type="hidden" name="Date" value="{{date.id}}">
+                          <input type="hidden" name="selectedYear" value="{{selected_year}}">
+                      </div>
+                      <div class="modal-footer">
+                       <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger" name="delete_date">Delete</button>
+                      </div>
+                </form>
+            </div>
+            <!-- /.modal-content -->
+          </div>
+          <!-- /.modal-dialog -->
+        </div>
+        {%endfor%}
+<!--End delete-->
+<script>
+function export_data(){
+    var data = JSON.parse(document.getElementById('groups_data').textContent);
+    var month = $("#month").val();
+    var year = $("#year").val();
+    var form = $(document.createElement('form'));
+    var token = $("<input>").attr("type", "hidden").attr("name", "csrfmiddlewaretoken").val('{{csrf_token}}');
+    $(form).append($(token));
+    for (group in data){
+        for (user of data[group]){
+            if($('#'+group+'_'+user.id).is(':checked')){
+                $(form).append($("<input>").attr("type", "hidden").attr("name", "user_list").val(user.id));
+            }
+        }
+    }
+    $(form).append($("<input>").attr("type", "hidden").attr("name", "month").val(month+'_'+year));
+    $(form).attr("method", "POST");
+	$(document.body).append(form);
+	$(form).attr("action","").submit();
+}
+</script>
+{% endblock %}

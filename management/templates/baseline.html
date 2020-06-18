@@ -1,0 +1,186 @@
+{% extends 'base.html'%}
+{% block page_content %}
+<script>
+        $(document).ready(function(){
+            $("#month").val("{{selectDate|date:'F'}}");
+            $("#year").val("{{selectDate|date:'Y'}}");
+        });
+        function select_date(){
+            var month = $("#month").val();
+            var year = $("#year").val();
+            $("#startDate").val(month+' '+year);
+        }
+</script>
+<br>
+<div style="margin: 50px">
+    <br>
+    <div class="row">
+        <div class="col-md-12 col-lg-12 col-sm-12">
+                <div>
+                    <form method="post">
+                            {% csrf_token %}
+                             <label>Select month:</label>
+                             <select id="month" value="">
+                                 <option value="January">January</option>
+                                 <option value="February">February</option>
+                                 <option value="March">March</option>
+                                 <option value="April">April</option>
+                                 <option value="May">May</option>
+                                 <option value="June">June</option>
+                                 <option value="July">July</option>
+                                 <option value="August">August</option>
+                                 <option value="September">September</option>
+                                 <option value="October">October</option>
+                                 <option value="November">November</option>
+                                 <option value="December">December</option>
+                             </select>
+                             <label>Select year:</label>
+                             <select id="year" value="">
+                                 <option value="2019">2019</option>
+                                 <option value="2020">2020</option>
+                                 <option value="2021">2021</option>
+                                 <option value="2022">2022</option>
+                                 <option value="2023">2023</option>
+                                 <option value="2024">2024</option>
+                                 <option value="2025">2025</option>
+                             </select>
+                            <input type="hidden" value="{{selectDate|date:'F Y'}}" name="startDate" id="startDate" class="date-picker" readonly/>
+                            <button name="queryMonth" class="btn btn-primary" type="submit" onclick="select_date()">Query</button>
+                    </form>
+                </div>
+            <br>
+                <div>
+                    <label>Group: </label>
+                    <select id="listgroup" onchange="functionGroup()">
+                        {%for key, value in groups_dict.items%}
+                            {%if key == groupselected %}
+                                <option value="{{key}}" selected>{{key}}</option>
+                            {%else%}
+                                <option value="{{key}}">{{key}}</option>
+                            {%endif%}
+                        {%endfor%}
+                    </select>
+                </div>
+            <div class="table-responsive">
+                <table id="tableBaseline">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>UserName</th>
+                            <th>First name</th>
+                            <th>Last name</th>
+                            <th>Email</th>
+                            <th>Baseline</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{groups_dict|json_script:"groups_data"}}
+{{baseline_status|json_script:"baseline_status"}}
+<script>
+    functionGroup();
+
+    function Create_button(userid, status){
+       if(status == false){
+        var button = '<a class="fa button_status" style="font-size:24px;color:red" onclick="ChangeDateStatus('+userid+')">&#128275;</a>';
+       }
+       else if(status == true){
+       var button = '<a class="fa button_status" style="font-size:24px;color:green" onclick="ChangeDateStatus('+userid+')">&#128274;</a>';
+       }
+       else{
+        button = '<a>None</a>'
+       }
+
+       return button;
+    }
+    function ChangeDateStatus(userid){
+        var groupValue = document.getElementById("listgroup").value;
+        var dateSelected = document.getElementById("startDate").value;
+        var form = document.createElement("form");
+        var date = document.createElement("input");
+        var group = document.createElement("input");
+        var user = document.createElement("input");
+        var security = document.createElement("input");
+        var formName = document.createElement("input");
+
+        form.method = "POST";
+        formName.name = "baseline";
+        formName.type = "hidden";
+        form.appendChild(formName);
+
+        group.type = "hidden";
+        group.name = "group";
+        group.value = groupValue;
+        form.appendChild(group);
+
+        user.type = "hidden";
+        user.name = "user_id";
+        user.value = userid;
+        form.appendChild(user);
+
+        date.value = dateSelected;
+        date.name = "month";
+        date.type = "hidden";
+        form.appendChild(date);
+
+        security.type = "hidden";
+        security.name = "csrfmiddlewaretoken";
+        security.value = "{{ csrf_token }}";
+        form.appendChild(security);
+
+        document.body.appendChild(form);
+
+        form.submit();
+    }
+    function functionGroup(){
+        var valueUser = JSON.parse(document.getElementById('groups_data').textContent);
+        var baseline_data = JSON.parse(document.getElementById('baseline_status').textContent);
+        var group = document.getElementById("listgroup").value;
+        var table = document.getElementById("tableBaseline");
+        var temp = valueUser[group];
+        var rows = table.rows.length
+        var name, arr;
+        name = "table table-bordered table-sm";
+        arr = table.className.split(" ");
+        if (arr.indexOf(name) == -1) {
+            table.className += " " + name;
+        }
+        /*Remove rows existing*/
+        for (i=rows; i > 1; i--){
+            table.deleteRow(i-1);
+        }
+
+        for (x of temp){
+            var row = table.insertRow();
+            var username = row.insertCell(0);
+            var firstname = row.insertCell(1);
+            var lastname = row.insertCell(2);
+            var email = row.insertCell(3);
+            var baseline = row.insertCell(4);
+
+            username.style.fontWeight = "bold";
+
+            username.innerHTML = x.username;
+            firstname.innerHTML = x.first_name;
+            lastname.innerHTML = x.last_name;
+            email.innerHTML = x.email;
+            console.log(baseline_data[x.username]);
+            baseline.innerHTML = Create_button(x.id, baseline_data[x.username]);
+
+            if(baseline_data[x.username] == true){
+                row.style.backgroundColor = "#ff80b3";
+            }
+            else if(baseline_data[x.username] == false){
+                row.style.backgroundColor = "#80ff80";
+            }
+            else{
+                row.style.backgroundColor = "#b3b3cc";
+            }
+
+        }
+    }
+</script>
+{% endblock %}

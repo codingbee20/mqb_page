@@ -1,0 +1,290 @@
+{% extends 'base.html'%}
+{% block page_content %}
+<br>
+
+<div class="table-responsive-xl">
+    <form method="post">
+        {% csrf_token %}
+        <div>
+                <label for="start_date"> Start date:</label>
+                <input type="date" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                <label for="end_date"> End date:</label>
+                <input type="date" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                <button name="querydate" type="submit" class="btn btn-primary">Query</button>
+        </div>
+    </form>
+    <br>
+    <table class="table table-bordered table-sm table-hover" id="tableEffort">
+        <thead class="thead-dark">
+            <tr>
+                <th>Actions</th>
+                <th>Date</th>
+                <th>Task Name</th>
+                <th>Test Case</th>
+                <th>Effort(hour)</th>
+                <th>Comments</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        {% for key, values in efforts_dict.items %}
+        {% if values|length > 1 %}
+
+        <tr>
+            <td rowspan="{{values|length|add:'2'}}" style="vertical-align:middle">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#Add_{{key.date|date:'Y_m_d'}}">Add task</button>
+                <button href="" type="button" class="btn btn-info" data-toggle="modal" data-target="#Edit_{{key.date|date:'Y_m_d'}}">EDIT</button>
+            </td>
+        </tr>
+        <tr>
+            <td rowspan="{{values|length|add:'1'}}" style="vertical-align:middle"><b>{{key.date|date:'l, d M Y'}}</b></td>
+        </tr>
+            {%for value in values%}
+        <tr>
+            <td style="vertical-align:middle"><b>{{value.task.taskName}}</b></td>
+            <td style="vertical-align:middle">{{value.quantity}}</td>
+            <td style="vertical-align:middle">{{value.effort}}</td>
+            <td ><pre style="text-align: left">{{value.comment}}</pre></td>
+            <td>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-xs" name="delete_task" value="{{value.task.id}}" >x</button>
+                    <div>
+                        <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                        <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                    </div>
+                </form>
+            </td>
+        </tr>
+            {%endfor%}
+        {%else%}
+            <tr>
+                <td style="vertical-align:middle">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#Add_{{key.date|date:'Y_m_d'}}">Add task</button>
+                    <button href="" type="button" class="btn btn-info" data-toggle="modal" data-target="#Edit_{{key.date|date:'Y_m_d'}}">EDIT</button>
+                </td>
+                <td style="vertical-align:middle"><b>{{key.date|date:'l, d M Y'}}</b></td>
+                {%if values|length == 1%}
+                    {%for value in values%}
+                <td style="vertical-align:middle"><b>{{value.task.taskName}}</b></td>
+                        <td style="vertical-align:middle">{{value.quantity}}</td>
+                        <td style="vertical-align:middle">{{value.effort}}</td>
+                        <td style="text-align: left"><pre>{{value.comment}}</pre></td>
+                        <td>
+                            <form method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-xs" name="delete_task" value="{{value.task.id}}" >x</button>
+                                <div>
+                                    <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                                    <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                                </div>
+                            </form>
+                        </td>
+                    {%endfor%}
+                {%else%}
+                    <td>&nbsp</td>
+                    <td>&nbsp</td>
+                    <td>&nbsp</td>
+                    <td>&nbsp</td>
+                    <td>&nbsp</td>
+                {%endif%}
+            </tr>
+        {%endif%}
+        {%endfor%}
+    </table>
+</div>
+<!--Modal Edit-->
+{%for keyModal, valuesModal in efforts_dict.items%}
+		<div class="modal fade" id="Edit_{{keyModal.date|date:'Y_m_d'}}">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Edit Task</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                        <form action="" class="" method="post">
+                            {% csrf_token %}
+                            <div>
+                                 <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                                <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-sm">
+                                    <thead class="thead-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Task Name</th>
+                                        <th>Test Case</th>
+                                        <th>Effort(hour)</th>
+                                        <th>Comments</th>
+                                    </tr>
+                                    </thead>
+                                    <tr>
+                                        <td rowspan="{{valuesModal|length|add:'1'}}">{{keyModal.date|date:'l, d M Y'}}</td>
+                                    </tr>
+                                    {%for valueM in valuesModal%}
+                                    <input type="hidden" name="taskID" value="{{valueM.task.id}}">
+                                    <input type="hidden" name="effortID" value="{{valueM.id}}">
+                                    <tr>
+                                        <td>
+                                        <div class="form-group">
+                                              <select class="form-control" name="task">
+                                                 {% for t in taskList%}
+                                                    {% if t == valueM.task.taskName%}
+                                                        <option value="{{t}}" selected>{{t}}</option>
+                                                    {%else%}
+                                                        <option value="{{t}}">{{t}}</option>
+                                                    {%endif%}
+                                                  {%endfor%}
+                                              </select>
+                                        </div>
+                                        </td>
+                                        <td>
+                                             <div class="form-group">
+                                                  <input type="text" class="form-control" name="quantity" value="{{valueM.quantity}}">
+                                             </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-group">
+                                                <input type="text" class="form-control" name="effort" value="{{valueM.effort}}">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-group">
+                                                <textarea rows="1" class="form-control" name="comment">{{valueM.comment}}</textarea>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {%endfor%}
+                                </table>
+                            </div>
+                            <button name="edit_task" type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                    <!-- Modal footer -->
+                     <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                     </div>
+                </div>
+
+            </div>
+        </div>
+	{%endfor%}
+<!--End Modal Edit-->
+<!-- The Modal add task -->
+{%for keyModal, valuesModal in efforts_dict.items%}
+    <div class="modal" id="Add_{{keyModal.date|date:'Y_m_d'}}">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+
+          <!-- Modal Header -->
+          <div class="modal-header">
+            <h4 class="modal-title">Add Task for date: {{keyModal.date|date:'l, d M Y'}}</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+          </div>
+
+          <!-- Modal body -->
+          <div class="modal-body">
+              <div>
+                  <button class="btn btn-success" type="button" onclick="addrowfunction('addtable_{{keyModal.date|date:'Y_m_d'}}')">+</button>
+              </div>
+              <form action="" class="" method="post">
+                  {% csrf_token %}
+                  <div>
+                    <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                    <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                  </div>
+                  <div class="table-responsive">
+                                <input type="hidden" name="date" value="{{keyModal.date|date:'Y-m-d'}}">
+                                <table class="table table-bordered table-hover table-sm" id="addtable_{{keyModal.date|date:'Y_m_d'}}">
+                                    <thead class="thead-light">
+                                    <tr>
+                                        <th>Task Name</th>
+                                        <th>Test Case</th>
+                                        <th>Effort(hour)</th>
+                                        <th>Comments</th>
+                                    </tr>
+                                    </thead>
+                                    <tr>
+                                        <td>
+                                        <div class="form-group">
+                                              <select class="form-control" name="task">
+                                                 {% for t in taskList%}
+                                                    <option value="{{t}}">{{t}}</option>
+                                                  {%endfor%}
+                                              </select>
+                                        </div>
+                                        </td>
+                                        <td>
+                                             <div class="form-group">
+                                                  <input type="text" class="form-control" name="quantity" value="0">
+                                             </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-group">
+                                                <input type="text" class="form-control" name="effort" value="0">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-group">
+                                                <textarea rows="1" class="form-control" name="comment"></textarea>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                  </div>
+                  <button name="add_task" type="submit" class="btn btn-primary">Submit</button>
+              </form>
+          </div>
+          <!-- Modal footer -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+{%endfor%}
+    <script>
+        function addrowfunction(tableid) {
+          var table = document.getElementById(tableid);
+          var row = table.insertRow(1);
+          var cell1 = row.insertCell(0);
+          var cell2 = row.insertCell(1);
+          var cell3 = row.insertCell(2);
+          var cell4 = row.insertCell(3);
+          cell1.innerHTML ='<div class="form-group"><select class="form-control" name="task">{% for t in taskList%}<option value="{{t}}">{{t}}</option>{%endfor%}</select></div>';
+          cell2.innerHTML ='<div class="form-group"><input type="text" class="form-control" name="quantity" value="0"></div>';
+          cell3.innerHTML ='<div class="form-group"><input type="text" class="form-control" name="effort" value="0"></div>';
+          cell4.innerHTML = '<div class="form-group"><textarea rows="1" class="form-control" name="comment"></textarea></div>';
+        }
+
+        var tbl = document.getElementById("tableEffort");
+        for(i = 0; i < tbl.rows.length; i++){
+            var x = tbl.rows[i].cells[0];
+            var y;
+            var k = 0;
+            if(x.getAttribute('rowspan') == null){
+                y = tbl.rows[i].cells[1].innerText;
+            }
+            else{
+                y = tbl.rows[i].cells[0].innerText;
+                k = Number(x.getAttribute('rowspan'));
+            }
+            if(y.includes("Saturday") || y.includes("Sunday")){
+                tbl.rows[i].style.backgroundColor = "#b3b3cc";
+                if(k != 0){
+                    tbl.rows[i-1].style.backgroundColor = "#b3b3cc";
+                    for( j = 1; j < k ;j++){
+                        tbl.rows[i+j].style.backgroundColor = "#b3b3cc";
+                    }
+                }
+            }
+        }
+    </script>
+
+{% endblock %}

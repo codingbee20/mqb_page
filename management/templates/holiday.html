@@ -1,0 +1,98 @@
+{% extends 'base.html'%}
+{% block page_content %}
+<br>
+<div style="margin-top: 50px">
+    <br>
+    <div class="row">
+        <div class="col-md-4 col-lg-4 col-sm-4"></div>
+        <div class="col-md-4 col-lg-4 col-sm-4">
+            <div>
+                <form method="post">
+                    {% csrf_token %}
+                   <div>
+                       <label>Select year:</label>
+                       <select name="selectedYear" class="{{selected_year}}">
+                           {%for year in year_list%}
+                               {%if year == selected_year %}
+                                    <option value="{{year}}" selected>{{year}}</option>
+                               {%else%}
+                                    <option value="{{year}}">{{year}}</option>
+                               {%endif%}
+                           {%endfor%}
+                       </select>
+                       <button name="query_year" class="btn btn-primary" type="submit">Query</button>
+                   </div>
+                </form>
+            </div>
+            <br>
+            <div>
+                <form method="post" onsubmit="return checkForm(this);">
+                    {% csrf_token %}
+                   <div>
+                       <label>Select date:</label>
+                       <input name="holiday" type="date" required pattern="\d{1,2}/\d{1,2}/\d{4}"/>
+                       <input type="hidden" value="{{selected_year}}" name="selectedYear">
+                       <button name="add_date" class="btn btn-success" type="submit">Add</button>
+                   </div>
+                </form>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm table-hover">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th style="text-align: center">Holiday</th>
+                        </tr>
+                        {%for date in holiday%}
+                        <tr>
+                            <td>
+                            <ul>
+                                <li>
+                                    {{date.date|date:'l, d-M-Y'}}
+                                    <ul>
+                                    <li style="display:inline">
+                                        <a href="" data-toggle="modal" data-target="#Delete_{{date.id}}">&#10060;</a>
+                                    </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            </td>
+                        </tr>
+                        {%endfor%}
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-4 col-sm-4"></div>
+    </div>
+</div>
+
+<!--Modal Delete-->
+        {%for date in holiday%}
+        <div class="modal fade" id="Delete_{{date.id}}">
+          <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post">
+                    {% csrf_token %}
+                      <div class="modal-header">
+                          <h4 class="modal-title">Delete date</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+
+                      </div>
+                      <div class="modal-body">
+                          <p><b>Do you want to delete date: {{date.date|date:'Y-m-d'}}</b></p>
+                          <input type="hidden" name="Date" value="{{date.id}}">
+                          <input type="hidden" name="selectedYear" value="{{selected_year}}">
+                      </div>
+                      <div class="modal-footer">
+                       <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger" name="delete_date">Delete</button>
+                      </div>
+                </form>
+            </div>
+            <!-- /.modal-content -->
+          </div>
+          <!-- /.modal-dialog -->
+        </div>
+        {%endfor%}
+<!--End delete-->
+{% endblock %}

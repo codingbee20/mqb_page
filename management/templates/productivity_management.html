@@ -1,0 +1,288 @@
+{% extends 'base.html'%}
+{% block page_content %}
+<br>
+<div class="row" style="margin-top: 50px">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm table-hover" id="tbl_summary_productivity">
+                <thead class="thead-dark">
+                <tr>
+                    <th colspan="{{categories|length|add:2}}" style="text-align: center;">Summary</th>
+                </tr>
+                <tr>
+                    <th style="text-align: center;">Categories</th>
+                    {% for key in categories%}
+                    <td style="text-align: center;">{{key.name}}</td>
+                    {%endfor%}
+                    <th style="text-align: center;">SUM</th>
+                </tr>
+                <tr>
+                    <th style="text-align: center;">Total_TC</th>
+                    {% for key in categories%}
+                    <td style="text-align: center;" id="TC_{{key.name|slugify}}">0</td>
+                    {%endfor%}
+                    <th style="text-align: center;" id="sum_tc">0</th>
+                </tr>
+                <tr>
+                    <th style="text-align: center;">Total_Eff</th>
+                    {% for key in categories%}
+                    <td style="text-align: center;" id="Eff_{{key.name|slugify}}">0</td>
+                    {%endfor%}
+                    <th style="text-align: center;" id="sum_eff" >0</th>
+                </tr>
+                <tr>
+                    <th style="text-align: center;">Pys</th>
+                    {% for key in categories%}
+                    <td style="text-align: center;" id="pys_{{key.name|slugify}}">0</td>
+                    {%endfor%}
+                    <th style="text-align: center;" id="sum_eff" >N/A</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+        <br>
+        <div class="table-responsive">
+            <form method="post" onsubmit="return checkForm(this);" id="form_query_date">
+                {% csrf_token %}
+                <div>
+                        <label for="start_date"> Start date:</label>
+                        <input type="date" name="startDate" value="{{start_date|date:'Y-m-d'}}" required pattern="\d{1,2}/\d{1,2}/\d{4}">
+                        <label for="end_date"> End date:</label>
+                        <input type="date" name="endDate" value="{{stop_date|date:'Y-m-d'}}" required pattern="\d{1,2}/\d{1,2}/\d{4}">
+                        <button name="queryDate" class="btn btn-primary" type="submit">Query</button>
+                </div>
+            </form>
+            <br>
+            <div>
+                <label>Group: </label>
+                <select id="listgroup" onchange="functionGroup()">
+                    {%for key, value in groups_dict.items%}
+                        {%if key == group %}
+                            <option value="{{key}}" selected>{{key}}</option>
+                        {%else%}
+                            <option value="{{key}}">{{key}}</option>
+                        {%endif%}
+                    {%endfor%}
+                </select>
+                <label>member: </label>
+                <select id="listmember" onchange="functionMember()"></select>
+            </div>
+            <div>
+                <table class="table table-bordered table-sm table-hover" id="tableEffort">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th style="width: 180px">Date</th>
+                            <th>Categories</th>
+                            <th style="width: 230px">Task_Name</th>
+                            <th style="width: 50px">No.TC</th>
+                            <th style="width: 50px">Effort</th>
+                            <th style="text-align: center">Comments</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div>
+    <p id="testing"></p>
+</div>
+<!--end remove new task-->
+{{groups_dict|json_script:"groups_data"}}
+{{efforts_dict|json_script:"efforts_dict"}}
+
+<script>
+    var valueUser = JSON.parse(document.getElementById('groups_data').textContent);
+    var group = document.getElementById("listgroup").value;
+    var member = document.getElementById("listmember");
+    var temp = valueUser[group];
+        var stringTemp = '';
+        for (x of temp){
+            stringTemp += "<option>"+x.username+"</option>"
+        }
+        member.innerHTML = stringTemp;
+        if ("{{member}}" != "None"){
+            member.value = "{{member}}"
+        }
+
+    functionMember();
+
+    function functionGroup(){
+        var value = JSON.parse(document.getElementById('groups_data').textContent);
+        var group = document.getElementById("listgroup").value;
+        var member = document.getElementById("listmember");
+        var table = document.getElementById("tableEffort").innerHTML;
+        var temp = value[group];
+        var stringTemp = '';
+        for (x of temp){
+            stringTemp += "<option>"+x.username+"</option>"
+        }
+        member.innerHTML = stringTemp;
+        functionMember();
+    }
+
+    function functionMember(){
+        var valueEffort = JSON.parse(document.getElementById('efforts_dict').textContent);
+        var memberName = document.getElementById("listmember").value;
+        var table = document.getElementById("tableEffort");
+        var rows = table.rows.length;
+        /*Remove rows existing*/
+        for (i=rows; i > 1; i--){
+            table.deleteRow(i-1);
+        }
+        //Sum table
+        sum_eff(valueEffort, memberName);
+        //insert row to table
+        var temp = valueEffort[memberName];
+        for (d in temp){
+            var part = d.split("_");
+            var Day = part[0];
+            if (temp[d].length > 1){
+                var row = table.insertRow();
+                var DateTask = row.insertCell(0);
+                DateTask.rowSpan = temp[d].length+1;
+                DateTask.innerHTML = d;
+                DateTask.style.fontWeight = "bold";
+                DateTask.style.verticalAlign = "middle";
+                row.className = Day;
+                for (effort of temp[d]){
+                    var new_row = table.insertRow();
+                    var Category = new_row.insertCell(0);
+                    var Task_Name = new_row.insertCell(1);
+
+                    var NoTC = new_row.insertCell(2);
+                    var Effort = new_row.insertCell(3);
+                    var Comment = new_row.insertCell(4);
+
+                    new_row.className = Day;
+
+                    Task_Name.style.verticalAlign = "middle";
+                    Task_Name.style.fontWeight = "bold";
+                    Category.style.fontWeight = "bold";
+                    Category.style.verticalAlign = "middle";
+                    NoTC.style.textAlign = "center";
+                    NoTC.style.verticalAlign = "middle";
+                    Effort.style.textAlign = "center";
+                    Effort.style.verticalAlign = "middle";
+
+                    Task_Name.innerHTML = effort.taskName;
+                    Category.innerHTML = effort.category;
+                    NoTC.innerHTML = effort.quantity;
+                    Effort.innerHTML = effort.effort;
+                    Comment.innerHTML = "<pre>"+effort.comment+"</pre>";
+                }
+            }
+            else if (temp[d].length == 1){
+                var new_row = table.insertRow();
+                //new_row.style.backgroundColor = "green";
+                var DateTask = new_row.insertCell(0);
+                DateTask.innerHTML = d;
+                DateTask.style.fontWeight = "bold";
+                DateTask.style.verticalAlign = "middle";
+                new_row.className = Day;
+
+                for (effort of temp[d]){
+                    var Category = new_row.insertCell(1);
+                    var Task_Name = new_row.insertCell(2);
+
+                    var NoTC = new_row.insertCell(3);
+                    var Effort = new_row.insertCell(4);
+                    var Comment = new_row.insertCell(5);
+
+                    Task_Name.style.verticalAlign = "middle";
+                    Task_Name.style.fontWeight = "bold";
+                    Category.style.fontWeight = "bold";
+                    Category.style.verticalAlign = "middle";
+                    NoTC.style.textAlign = "center";
+                    Effort.style.textAlign = "center";
+
+                    Task_Name.innerHTML = effort.taskName;
+                    Category.innerHTML = effort.category;
+                    NoTC.innerHTML = effort.quantity;
+                    Effort.innerHTML = effort.effort;
+                    Comment.innerHTML = effort.comment;
+                }
+            }
+            else {
+                var new_row = table.insertRow();
+                var DateTask = new_row.insertCell(0);
+                DateTask.style.fontWeight = "bold";
+                DateTask.style.verticalAlign = "middle";
+                DateTask.innerHTML = d;
+                var Category = new_row.insertCell(1);
+                var Task_Name = new_row.insertCell(2);
+
+                var NoTC = new_row.insertCell(3);
+                var Effort = new_row.insertCell(4);
+                var Comment = new_row.insertCell(5);
+
+                new_row.className = Day;
+
+                Task_Name.innerHTML = " ";
+                Category.innerHTML = " ";
+                NoTC.innerHTML = " ";
+                Effort.innerHTML = " ";
+                Comment.innerHTML = " ";
+            }
+        }
+        highlightWeekend(table);
+    }
+
+    function highlightWeekend(tbl){
+            for(i = 0; i < tbl.rows.length; i++){
+                var x = tbl.rows[i].cells[0];
+                var k = 0;
+                if(x.getAttribute('rowspan') != null){
+                    k = Number(x.getAttribute('rowspan'));
+                }
+                if(x.innerText.includes("Saturday") || x.innerText.includes("Sunday")){
+                    tbl.rows[i].style.backgroundColor = "#b3b3cc";
+                    if(k != 0){
+                        for( j = 1; j < k ;j++){
+                            tbl.rows[i+j].style.backgroundColor = "#b3b3cc";
+                        }
+                    }
+                }
+            }
+    }
+
+    function sum_eff(valueEffort, memberName){
+        var categories = [];
+        {%for c in categories%}
+            categories.push("{{c.name|slugify}}")
+        {%endfor%}
+        var Effort_dict = valueEffort[memberName];
+        var sum_tc = 0;
+        var sum_eff = 0;
+        for (category of categories){
+            var total_TC = 0;
+            var total_Eff = 0;
+            var id_TC = "TC_"+category;
+            var id_Eff = "Eff_"+category;
+            var id_pys = "pys_"+category;
+            for (d in Effort_dict){
+               for (effort of Effort_dict[d]){
+                  //console.log(effort.category);
+                  if(effort.category.toLowerCase() == category){
+                      total_TC += Number(effort.quantity);
+                      total_Eff += Number(effort.effort);
+                      sum_tc += Number(effort.quantity);
+                      sum_eff += Number(effort.effort);
+                  }
+               }
+            };
+            document.getElementById(id_TC).innerHTML = total_TC;
+            document.getElementById(id_Eff).innerHTML = total_Eff;
+            if (total_Eff == 0){
+                document.getElementById(id_pys).innerHTML = '0';
+            }
+            else {
+                document.getElementById(id_pys).innerHTML = Math.round(total_TC/(total_Eff/8)*100)/100;
+            };
+        }
+        document.getElementById("sum_tc").innerHTML = sum_tc;
+        document.getElementById("sum_eff").innerHTML = sum_eff;
+    }
+</script>
+
+{% endblock %}

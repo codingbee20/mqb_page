@@ -1,0 +1,385 @@
+{% extends 'base.html'%}
+{% block page_content %}
+{%load static%}
+<link rel="stylesheet" href="{%static 'css/productivity.css' %}">
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="{%static 'js/productivity.js'%}"></script>
+<script type="text/javascript" src="https://cdn.rawgit.com/ashl1/datatables-rowsgroup/fbd569b8768155c7a9a62568e66a64115887d7d0/dataTables.rowsGroup.js"></script>
+<br>
+<div class="row" style="margin-top:50px;">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <div class="">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm table-hover">
+                    <thead class="thead-dark">
+                            <tr>
+                                <th colspan="{{sumeffort|length|add:2}}" style="text-align: center;">Summary</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align: center;">Categories</th>
+                                {% for key,sumeff in sumeffort.items%}
+                                <td style="text-align: center;">{{key}}</td>
+                                {%endfor%}
+                                <th style="text-align: center;">SUM</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align: center;">Total_TC</th>
+                                {% for key,sumeff in sumeffort.items%}
+                                <td style="text-align: center;">{{sumeff|first}}</td>
+                                {%endfor%}
+                                <th style="text-align: center;">{{sum_tc}}</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align: center;">Total_Eff</th>
+                                {% for key,sumeff in sumeffort.items%}
+                                <td style="text-align: center;">{{sumeff|last}}</td>
+                                {%endfor%}
+                                <th style="text-align: center;">{{sum_eff}}</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align: center;">Pys</th>
+                                {% for value in pys%}
+                                <td style="text-align: center;">{{value}}</td>
+                                {%endfor%}
+                                <th style="text-align: center;">N/A</th>
+                            </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <br>
+        <div class="table-responsive">
+            <div>
+                <form method="post" onsubmit="return checkForm(this);">
+                    {% csrf_token %}
+                    <div>
+                            <label for="start_date"> Start date:</label>
+                            <input type="date" name="start_date" value="{{startdate|date:'Y-m-d'}}" required pattern="\d{1,2}/\d{1,2}/\d{4}" >
+                            <label for="end_date"> End date:</label>
+                            <input type="date" name="end_date" value="{{enddate|date:'Y-m-d'}}" required pattern="\d{1,2}/\d{1,2}/\d{4}">
+                            <button name="querydate" type="submit" class="btn btn-primary">Query</button>
+                    </div>
+                </form>
+            </div>
+            <br>
+            <table class="table table-bordered table-sm table-hover" id="tableEffort">
+                <thead class="thead-dark">
+                    <tr>
+                        <th style="width: 180px">Date</th>
+                        <th>Categories</th>
+                        <th style="width: 230px">Task_Name</th>
+                        <th style="width: 50px">No.TC</th>
+                        <th style="width: 50px">Effort</th>
+                        <th style="text-align: center">Comments</th>
+                    </tr>
+                </thead>
+
+                {% for key, values in efforts_dict.items %}
+                {% if values|length > 1 %}
+                <tr class="{{key.date|date:'l'}}">
+                    <td rowspan="{{values|length|add:'1'}}" style="vertical-align:middle"><b>{{key.date|date:'l_d_M_Y'}}</b></td>
+                </tr>
+                    {%for value in values%}
+                <tr class="{{key.date|date:'l'}}">
+                    <td><b>{{value.tasktracking.categories.name}}</b></td>
+                    <td style="vertical-align:middle"><b>{{value.tasktracking.taskName}}</b></td>
+                    <td style="vertical-align:middle; text-align: center">{{value.quantity}}</td>
+                    <td style="vertical-align:middle; text-align: center">{{value.effort}}</td>
+                    <td >
+                        <ul>
+                            <li>
+                                <pre style="font-size: 13px;">{{value.comment}}</pre>
+                                <ul>
+                                    {%if key.date|date:'n' not in block_data %}
+                                    <li style="display:inline">
+                                        <a href="" data-toggle="modal" data-target="#Add_{{key.date|date:'Y_m_d'}}" >&#10133;&nbsp;</a>
+                                    </li>
+                                    <li style="display:inline">
+                                        <a href="" data-toggle="modal" data-target="#Edit_{{key.date|date:'Y_m_d'}}">&#128736;&nbsp;</a>
+                                    </li>
+                                    <li style="display:inline">
+                                        <a href="" data-toggle="modal" data-target="#Delete_{{value.id}}">&#10060;</a>
+                                    </li>
+                                    {%endif%}
+                                </ul>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                    {%endfor%}
+                {%else%}
+                    <tr class="{{key.date|date:'l'}}">
+                        <td style="vertical-align:middle"><b>{{key.date|date:'l_d_M_Y'}}</b></td>
+                        {%if values|length == 1%}
+                            {%for value in values%}
+                        <td><b>{{value.tasktracking.categories.name}}</b></td>
+                        <td style="vertical-align:middle"><b>{{value.tasktracking.taskName}}</b></td>
+                        <td style="vertical-align:middle; text-align: center" >{{value.quantity}}</td>
+                        <td style="vertical-align:middle; text-align: center">{{value.effort}}</td>
+                        <td>
+                            <ul>
+                                <li>
+                                    <pre style="font-size: 13px;">{{value.comment}}</pre>
+                                    <ul>
+                                        {%if key.date|date:'n' not in block_data %}
+                                        <li style="display:inline">
+                                            <a href="" data-toggle="modal" data-target="#Add_{{key.date|date:'Y_m_d'}}" >&#10133;&nbsp;</a>
+                                        </li>
+                                        <li style="display:inline">
+                                            <a href="" data-toggle="modal" data-target="#Edit_{{key.date|date:'Y_m_d'}}">&#128736;&nbsp;</a>
+                                        </li>
+                                        <li style="display:inline">
+                                            <a href="" data-toggle="modal" data-target="#Delete_{{value.id}}">&#10060;</a>
+                                        </li>
+                                        {%endif%}
+                                    </ul>
+                                </li>
+                            </ul>
+                        </td>
+                            {%endfor%}
+                        {%else%}
+                            <td>&nbsp;&nbsp;</td>
+                            <td>&nbsp;&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;&nbsp;</td>
+                            <td>
+                                <ul>
+                                    <li>
+                                        <a>&nbsp;&nbsp;</a>
+                                        <ul>
+                                            {%if key.date|date:'n' not in block_data %}
+                                            <li>
+                                                <a href="" data-toggle="modal" data-target="#Add_{{key.date|date:'Y_m_d'}}">&#10133;</a>
+                                            </li>
+                                            {%endif%}
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </td>
+                        {%endif%}
+                    </tr>
+                {%endif%}
+                {%endfor%}
+            </table>
+        </div>
+    </div>
+</div>
+
+<!---------------Modal--------------->
+{%for keyModal, valuesModal in efforts_dict.items%}
+        <!--Modal Edit-->
+		<div class="modal fade" id="Edit_{{keyModal.date|date:'Y_m_d'}}">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <form action="" class="" method="post" onsubmit="return checkForm(this);">
+                        {% csrf_token %}
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Edit Task</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body">
+
+                            <div>
+                                 <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                                <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-sm">
+                                    <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 200px">Date</th>
+                                        <th style="width: 260px">Task_Name</th>
+                                        <th style="width: 70px">No.TC</th>
+                                        <th style="width: 70px">Effort</th>
+                                        <th style="text-align: center">Comments</th>
+                                    </tr>
+                                    </thead>
+                                    <tr>
+                                        <td style="vertical-align:middle" rowspan="{{valuesModal|length|add:'1'}}">{{keyModal.date|date:'l, d M Y'}}</td>
+                                    </tr>
+                                    {%for valueM in valuesModal%}
+                                    <input type="hidden" name="effortID" value="{{valueM.id}}">
+                                    <tr>
+                                        <td>
+                                        <div class="form-group">
+                                              <select class="form-control" name="task_list">
+                                                 {% for t in taskList%}
+                                                    {% if t.taskName == valueM.tasktracking.taskName%}
+                                                        <option value="{{t.id}}" selected>{{t.taskName}}</option>
+                                                    {%else%}
+                                                        <option value="{{t.id}}">{{t.taskName}}</option>
+                                                    {%endif%}
+                                                  {%endfor%}
+                                              </select>
+                                        </div>
+                                        </td>
+                                        <td>
+                                             <div class="form-group">
+                                                  <input type="text" class="form-control" name="quantity" value="{{valueM.quantity}}" required pattern="\d{1,2,3}">
+                                             </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-group">
+                                                <input type="text" class="form-control" name="effort" value="{{valueM.effort}}" required pattern="\d+\.*\d*">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-group">
+                                                <textarea rows="1" class="form-control" name="comment">{{valueM.comment}}</textarea>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {%endfor%}
+                                </table>
+                            </div>
+                    </div>
+                            <!-- Modal footer -->
+                             <div class="modal-footer">
+                                <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                                <button name="edit_task" type="submit" class="btn btn-primary">Submit</button>
+                             </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+        <!--End Modal Edit-->
+        <!--Modal Delete-->
+        {%for value in valuesModal%}
+        <div class="modal fade" id="Delete_{{value.id}}">
+          <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post">
+                    {% csrf_token %}
+                      <div class="modal-header">
+                          <h4 class="modal-title">Delete task</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+
+                      </div>
+                      <div class="modal-body">
+                          <p><b>Do you want to delete: Task: {{value.tasktracking.taskName}} | No.TC: {{value.quantity}} | Effort: {{value.effort}}</b></p>
+                          <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                          <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                      </div>
+                      <div class="modal-footer">
+                       <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger" name="delete_task" value="{{value.id}}">Delete</button>
+                      </div>
+                </form>
+            </div>
+            <!-- /.modal-content -->
+          </div>
+          <!-- /.modal-dialog -->
+        </div>
+        {%endfor%}
+        <!--End delete-->
+        <!--The Modal add task-->
+        <div class="modal" id="Add_{{keyModal.date|date:'Y_m_d'}}">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <form action="" class="" method="post" onsubmit="return checkForm(this);">
+                        {% csrf_token %}
+                      <!-- Modal Header -->
+                      <div class="modal-header">
+                        <h4 class="modal-title">Add Task for date: {{keyModal.date|date:'l, d M Y'}}</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                      </div>
+
+                      <!-- Modal body -->
+                      <div class="modal-body">
+                          <div>
+                              <button class="btn btn-success" type="button" onclick="addrowfunction('addtable_{{keyModal.date|date:'Y_m_d'}}')">+</button>
+                          </div>
+
+                              <div>
+                                <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                                <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                              </div>
+                              <div class="table-responsive">
+                                  <input type="hidden" name="date" value="{{keyModal.date|date:'Y-m-d'}}">
+                                        <table class="table table-bordered table-hover table-sm" id="addtable_{{keyModal.date|date:'Y_m_d'}}">
+                                                <thead class="thead-light">
+                                                <tr>
+                                                    <th>Task_Name</th>
+                                                    <th style="width: 70px">No.TC</th>
+                                                    <th style="width: 70px">Effort</th>
+                                                    <th style="text-align: center">Comments</th>
+                                                </tr>
+                                                </thead>
+                                                <tr>
+                                                    <td>
+                                                    <div class="form-group">
+                                                          <select class="form-control" name="task" required>
+                                                             {% for t in taskList%}
+                                                                <option value="{{t.id}}">{{t.taskName}}</option>
+                                                              {%endfor%}
+                                                          </select>
+                                                    </div>
+                                                    </td>
+                                                    <td>
+                                                         <div class="form-group">
+                                                              <input type="text" class="form-control" name="quantity" value="0" required pattern="\d{1,2,3}">
+                                                         </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="form-group">
+                                                            <input type="text" class="form-control" name="effort" value="0" required pattern="\d+\.*\d*">
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="form-group">
+                                                            <textarea rows="1" class="form-control" name="comment"></textarea>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                        </table>
+                              </div>
+                      </div>
+                        <!-- Modal footer -->
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                          <button name="add_task" type="submit" class="btn btn-primary">Submit</button>
+                      </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!--End Modal Add-->
+{%endfor%}
+<!-- The Modal add task -->
+    <script>
+        function addrowfunction(tableid) {
+          var table = document.getElementById(tableid);
+          var row = table.insertRow();
+          var cell1 = row.insertCell(0);
+          var cell2 = row.insertCell(1);
+          var cell3 = row.insertCell(2);
+          var cell4 = row.insertCell(3);
+          cell1.innerHTML ='<div class="form-group"><select class="form-control" name="task">{% for t in taskList%}<option value="{{t.id}}">{{t.taskName}}</option>{%endfor%}</select></div>';
+          cell2.innerHTML ='<div class="form-group"><input type="text" class="form-control" name="quantity" value="0"></div>';
+          cell3.innerHTML ='<div class="form-group"><input type="text" class="form-control" name="effort" value="0"></div>';
+          cell4.innerHTML = '<div class="form-group"><textarea rows="1" class="form-control" name="comment"></textarea></div>';
+        }
+
+        var tbl = document.getElementById("tableEffort");
+        for(i = 0; i < tbl.rows.length; i++){
+            var x = tbl.rows[i].cells[0];
+            var k = 0;
+            if(x.getAttribute('rowspan') != null){
+                k = Number(x.getAttribute('rowspan'));
+            }
+            if(x.innerText.includes("Saturday") || x.innerText.includes("Sunday")){
+                tbl.rows[i].style.backgroundColor = "#b3b3cc";
+                if(k != 0){
+                    for( j = 1; j < k ;j++){
+                        tbl.rows[i+j].style.backgroundColor = "#b3b3cc";
+                    }
+                }
+            }
+        }
+
+    </script>
+
+{% endblock %}

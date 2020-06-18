@@ -1,0 +1,141 @@
+{% extends 'base.html'%}
+{% block page_content %}
+{%load static%}
+<script>
+$(document).ready(function(){
+    $("#month").val("{{selectDate|date:'F'}}");
+    $("#year").val("{{selectDate|date:'Y'}}");
+});
+function select_date(){
+    var month = $("#month").val();
+    var year = $("#year").val();
+    $("#startDate").val(month+' '+year);
+}
+</script>
+<br>
+<div style="margin-top: 50px">
+    {%if not notification %}
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <div>
+            <form method="post">
+                {% csrf_token %}
+                 <label>Select month:</label>
+                 <select id="month" value="">
+                     <option value="January">January</option>
+                     <option value="February">February</option>
+                     <option value="March">March</option>
+                     <option value="April">April</option>
+                     <option value="May">May</option>
+                     <option value="June">June</option>
+                     <option value="July">July</option>
+                     <option value="August">August</option>
+                     <option value="September">September</option>
+                     <option value="October">October</option>
+                     <option value="November">November</option>
+                     <option value="December">December</option>
+                 </select>
+                 <label>Select year:</label>
+                 <select id="year" value="">
+                     <option value="2019">2019</option>
+                     <option value="2020">2020</option>
+                     <option value="2021">2021</option>
+                     <option value="2022">2022</option>
+                     <option value="2023">2023</option>
+                     <option value="2024">2024</option>
+                     <option value="2025">2025</option>
+                 </select>
+                <input type="hidden" value="{{selectDate|date:'F Y'}}" name="startDate" id="startDate" class="date-picker" readonly/>
+                <button name="queryMonth" class="btn btn-primary" type="submit" onclick="select_date()">Query</button>
+            </form>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-md-6 col-lg-6 col-sm-6">
+             <label>Group: </label>
+             <select id="listgroup" onchange="changeData()">
+                    {%for key, value in data_product.items%}
+                    <option value="{{key}}">{{key}}</option>
+                    {%endfor%}
+             </select>
+            </div>
+            <div class="col-md-6 col-lg-6 col-sm-6">
+                <div>
+                    <label>Number of working day: <b>{{num_date_working}}</b></label>
+                </div>
+                <div>
+                    <label>Number of working Hrs: <b>{{num_hour_working}}</b></label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div id = "barchart" style = "width: 100%; height: 400px; margin: 0; padding: 0;"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-lg-6 col-sm-6">
+                <div id="piechart"></div>
+            </div>
+            <div class="col-md-6 col-lg-6 col-sm-6">
+                <div id="pysChart"></div>
+            </div>
+        </div>
+    </div>
+    {%else%}
+    <div class="col-md-12 col-lg-12 col-sm-12" style="text-align: center;">{{notification}}</div>
+    {%endif%}
+</div>
+<script type="text/javascript" src="{% static 'css/loader.js' %}"></script>
+<script language = "JavaScript">
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(barChart);
+google.charts.setOnLoadCallback(pieChart);
+google.charts.setOnLoadCallback(pysChart);
+function changeData(){
+    barChart();
+    pieChart();
+    pysChart();
+}
+function barChart() {
+            // Define the chart to be drawn.
+            var group = document.getElementById("listgroup").value;
+            var sumlist = {{data_product|safe}}
+            var data = google.visualization.arrayToDataTable(sumlist[group]);
+            // Set chart options
+            var options = {
+               title : 'Productivity chart',
+               vAxis: {title: 'Efforts(TC/hour)'},
+               hAxis: {title: 'Categories'},
+               seriesType: 'bars',
+            };
+            // Instantiate and draw the chart.
+            var chart = new google.visualization.ComboChart(document.getElementById('barchart'));
+            chart.draw(data, options);
+}
+
+// Draw the chart and set the chart values
+function pieChart() {
+  var group = document.getElementById("listgroup").value;
+  var sum_effort = {{pie_chart_effort|safe}}
+  var data = google.visualization.arrayToDataTable(sum_effort[group]);
+
+  // Optional; add a title and set the width and height of the chart
+  var options = {'title':'Effort', 'width':600, 'height':400, is3D: true};
+
+  // Display the chart inside the <div> element with id="piechart"
+  var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+  chart.draw(data, options);
+}
+
+function pysChart() {
+  var group = document.getElementById("listgroup").value;
+  var sum_PyS = {{pie_chart_PyS|safe}}
+  var data = google.visualization.arrayToDataTable(sum_PyS[group]);
+
+  // Optional; add a title and set the width and height of the chart
+  var options = {'title':'PyS', 'width':600, 'height':400, is3D: true};
+
+  // Display the chart inside the <div> element with id="pysChart"
+  var chart = new google.visualization.PieChart(document.getElementById('pysChart'));
+  chart.draw(data, options);
+}
+</script>
+{% endblock %}

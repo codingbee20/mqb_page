@@ -1,0 +1,344 @@
+{% extends 'base.html'%}
+{% block page_content %}
+
+<script>
+        $(document).ready(function(){
+            $("#month").val("{{selectDate|date:'F'}}");
+            $("#year").val("{{selectDate|date:'Y'}}");
+        });
+        function select_date(){
+            var month = $("#month").val();
+            var year = $("#year").val();
+            $("#startDate").val(month+' '+year);
+        }
+</script>
+<script>
+    function hour_working(start_date, end_date){
+        console.log(start_date);
+        console.log(end_date);
+        var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        var days_working = 0;
+        temp_date = new Date(start_date);
+        temp_end_date = new Date(end_date);
+        while(temp_date <= temp_end_date){
+            if(days[temp_date.getDay()] != 'Sunday' && days[temp_date.getDay()] != 'Saturday'){
+                days_working += 1;
+            }
+            temp_date.setDate(temp_date.getDate()+1);
+        }
+        return days_working*8;
+    }
+    function update_efforts(id_start_date, id_end_date, id_efforts){
+        $(id_start_date).change(function() {
+            var start_date = new Date($(this).val());
+            $(id_end_date).change(function() {
+                var end_date = new Date($(this).val());
+                if(start_date <= end_date){
+                    $(id_efforts).val(hour_working(start_date, end_date));
+                }
+                else{
+                    $(id_efforts).val(hour_working(end_date, start_date));
+                }
+                
+            });
+        });
+    } 
+    $(document).ready(function(){
+        update_efforts("#start_date" , "#end_date", "#efforts");
+        update_efforts("#end_date" , "#start_date", "#efforts");
+    });
+    function update_efforts_edit(id_start_date, id_end_date, id_efforts){
+        var start_date = new Date($(id_start_date).val());
+        var end_date = new Date($(id_end_date).val());
+        $(id_efforts).val(hour_working(start_date, end_date));
+    }        
+</script>
+<br>
+<div style="margin-top: 50px">
+        <div>
+                <form method="post">
+                    {% csrf_token %}
+                     <label>Select month:</label>
+                     <select id="month" value="">
+                         <option value="January">January</option>
+                         <option value="February">February</option>
+                         <option value="March">March</option>
+                         <option value="April">April</option>
+                         <option value="May">May</option>
+                         <option value="June">June</option>
+                         <option value="July">July</option>
+                         <option value="August">August</option>
+                         <option value="September">September</option>
+                         <option value="October">October</option>
+                         <option value="November">November</option>
+                         <option value="December">December</option>
+                     </select>
+                     <label>Select year:</label>
+                     <select id="year" value="">
+                         <option value="2019">2019</option>
+                         <option value="2020">2020</option>
+                         <option value="2021">2021</option>
+                         <option value="2022">2022</option>
+                         <option value="2023">2023</option>
+                         <option value="2024">2024</option>
+                         <option value="2025">2025</option>
+                     </select>
+                    <input type="hidden" value="{{selectDate|date:'F Y'}}" name="startDate" id="startDate" class="date-picker" readonly/>
+                    <button name="queryMonth" class="btn btn-primary" type="submit" onclick="select_date()">Query</button>
+                </form>
+        </div>
+    <br>
+
+    <div>
+        <button class="btn btn-success" data-toggle="modal" data-target="#addnewtask">&#10133;</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Task_Name</th>
+                    <th>Categories</th>
+                    <th style="text-align: center;">Effort_EST</th>
+                    <th style="text-align: center;">Start_date</th>
+                    <th style="text-align: center;">Stop_date</th>
+                </tr>
+            </thead>
+            {%for task in taskInmonth%}
+                {%if task.status == False and task.startdate|date:'n' not in block_data %}
+                    <tr bgcolor="#80ff80">
+                        <td>
+                            <ul>
+                                <li>
+                                    <a>{{task.taskName}}</a>
+                                    <ul>
+                                        <li style="display:inline">
+                                            <a href="" data-toggle="modal" data-target="#Delete_{{task.id}}" style="margin-top: 0px;">&#10060;</a>
+                                        </li>
+                                        <li style="display:inline">
+                                            <a href="" data-toggle="modal" data-target="#Edit_{{task.id}}">&#128736;</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </td>
+                        <td>{{task.categories.name}}</td>
+                        <td style="text-align: center;">{{task.effort_est}}</td>
+                        <td style="text-align: center;">{{task.startdate|date:'d-M-Y'}}</td>
+                        <td style="text-align: center;">{{task.stopdate|date:'d-M-Y'}}</td>
+                    </tr>
+                {%else%}
+                    <tr bgcolor="#ff80b3">
+                        <td>
+                            <ul>
+                                <li>
+                                    <a>{{task.taskName}}</a>
+                                    <ul>
+                                        <li style="display:inline">
+                                            <a href="" data-toggle="modal" data-target="#Edit_{{task.id}}">&#128736;</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </td>
+                        <td>{{task.categories.name}}</td>
+                        <td style="text-align: center;">{{task.effort_est}}</td>
+                        <td style="text-align: center;">{{task.startdate|date:'d-M-Y'}}</td>
+                        <td style="text-align: center;">{{task.stopdate|date:'d-M-Y'}}</td>
+                    </tr>
+                {%endif%}
+            {%endfor%}
+        </table>
+    </div>
+</div>
+
+<!--Modal remove new task-->
+{%for task in taskInmonth%}
+<div class="modal fade" id="Delete_{{task.id}}">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h4 class="modal-title">Delete task</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p><b>Do you want to delete Task: {{task.taskName}}</b></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger" name="remove_task" value="{{task.id}}">Delete</button>
+                    <input type="hidden" name="startDate" value="{{selectDate|date:'F Y'}}">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Edit -->
+<div class="modal fade" id="Edit_{{task.id}}">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form method="post" onsubmit="return checkForm(this);">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h4 class="modal-title">Edit task</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-xl">
+                            <thead class="thead-light">
+                            <tr>
+                                <th style="width: 260px">Task_Name</th>
+                                <th> Task_Categories</th>
+                                <th style="width: 70px">Effort_EST</th>
+                                <th>Start date</th>
+                                <th>Stop date</th>
+                            </tr>
+                            </thead>
+                            <tr>
+                                <td>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" name="new_task" value="{{task.taskName}}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="form-group">
+                                        <select name="Task_Categories" class="form-control">
+                                            {%for category in taskcategory%}
+                                                {%if task.categories.name == category.name%}
+                                                <option value="{{category.name}}" selected>{{category.name}}</option>
+                                                {%else%}
+                                                <option value="{{category.name}}">{{category.name}}</option>
+                                                {%endif%}
+                                            {%endfor%}
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" name="efforts" id="efforts_Edit_{{task.id}}" required pattern="\d+\.*\d*" value="{{task.effort_est}}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="form-group">
+                                        <input onchange="update_efforts_edit('#start_date_Edit_{{task.id}}' , '#end_date_Edit_{{task.id}}', '#efforts_Edit_{{task.id}}')" type="date" class="form-control" name="start_date" id="start_date_Edit_{{task.id}}" required pattern="\d{1,2}/\d{1,2}/\d{4}" value="{{task.startdate|date:'Y-m-d'}}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="form-group">
+                                        <input onchange="update_efforts_edit('#start_date_Edit_{{task.id}}' , '#end_date_Edit_{{task.id}}', '#efforts_Edit_{{task.id}}')" type="date" class="form-control" name="end_date" id="end_date_Edit_{{task.id}}" required pattern="\d{1,2}/\d{1,2}/\d{4}" value="{{task.stopdate|date:'Y-m-d'}}">
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger" name="edit_task" value="{{task.id}}">Submit</button>
+                    <input type="hidden" name="startDate" value="{{selectDate|date:'F Y'}}">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!--script>
+    $(document).ready(function(){
+        update_efforts("#start_date_Edit_{{task.id}}" , "#end_date_Edit_{{task.id}}", "#efforts_Edit_{{task.id}}");
+        update_efforts("#end_date_Edit_{{task.id}}" , "#start_date_Edit_{{task.id}}", "#efforts_Edit_{{task.id}}");
+    });  
+</script-->
+<!--end Edit -->
+{%endfor%}
+<!--end remove new task-->
+<!--Modal add new task-->
+		<div class="modal fade" id="addnewtask">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <form action="" class="" method="post" onsubmit="return checkForm(this);">
+                        {% csrf_token %}
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Add new task</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                        <!--div>
+                            <input type="hidden" name="start_date" value="{{startdate|date:'Y-m-d'}}">
+                            <input type="hidden" name="end_date" value="{{enddate|date:'Y-m-d'}}">
+                        </div-->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover table-xl">
+                                    <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 260px">Task_Name</th>
+                                        <th> Task_Categories</th>
+                                        <th style="width: 70px">Effort_EST</th>
+                                        <th>Start date</th>
+                                        <th>Stop date</th>
+                                    </tr>
+                                    </thead>
+                                    <tr>
+                                        <td>
+                                           <div class="form-group">
+                                               <input type="text" class="form-control" name="new_task" placeholder="input your task name">
+                                           </div>
+                                       </td>
+                                        <td>
+                                            <div class="form-group">
+                                               <select name="Task_Categories" class="form-control" id="add_Task_Categories">
+                                                   {%for category in taskcategory%}
+                                                   <option>{{category.name}}</option>
+                                                   {%endfor%}
+                                               </select>
+                                           </div>
+                                        </td>
+                                       <td>
+                                           <div class="form-group">
+                                               <input type="text" class="form-control" id="efforts" name="efforts" required pattern="\d+\.*\d*">
+                                           </div>
+                                       </td>
+                                       <td>
+                                           <div class="form-group">
+                                               <input type="date" class="form-control" id="start_date" name="start_date" required pattern="\d{1,2}/\d{1,2}/\d{4}">
+                                           </div>
+                                       </td>
+                                       <td>
+                                           <div class="form-group">
+                                               <input type="date" class="form-control" id="end_date" name="end_date" required pattern="\d{1,2}/\d{1,2}/\d{4}">
+                                           </div>
+                                       </td>
+                                    </tr>
+                            </table>
+                            <input type="hidden" class="form-control" name="add_new_task">
+                        </div>
+                    </div>
+                            <!-- Modal footer -->
+                             <div class="modal-footer">
+                                <button type="button" class="btn btn-info mr-auto" data-dismiss="modal">Close</button>
+                                <button name="add_new_task" type="button" class="btn btn-primary" onclick="submit_add_task()">Submit</button>
+                             </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!--End Modal add new task-->
+<script>
+function submit_add_task(){
+    var form = $("#efforts").closest("form");
+    $.ajax({
+        url: "",
+        data: form.serialize(),
+        dataType: 'json',
+        type: 'POST',
+        success: function(data) {
+            $('#addnewtask').modal('hide');
+            document.location.reload(true);
+        }
+    });
+};
+</script>
+      {% endblock %}

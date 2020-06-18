@@ -1,0 +1,223 @@
+{% extends 'base.html'%}
+{% block page_content %}
+{%load static%}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script type="text/javascript" src="{% static 'css/myAjax.js' %}"></script>
+<script>
+    $(document).ready(function(){
+        $("#myInput").on("keyup",function() {
+            var value = $(this).val().toLowerCase();
+            $("#tableTask tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });        
+</script>
+<script>
+        $(document).ready(function(){
+            $("#month").val("{{selectDate|date:'F'}}");
+            $("#year").val("{{selectDate|date:'Y'}}");
+        });
+        function select_date(){
+            var month = $("#month").val();
+            var year = $("#year").val();
+            $("#startDate").val(month+' '+year);
+        }
+        </script>
+<br>
+<div style="margin-top: 50px">
+    <div class="row">
+            <div class="col-md-12 col-lg-12 col-sm-12">
+                    <form method="post">
+                        {% csrf_token %}
+                         <label>Select month:</label>
+                         <select id="month" value="">
+                             <option value="January">January</option>
+                             <option value="February">February</option>
+                             <option value="March">March</option>
+                             <option value="April">April</option>
+                             <option value="May">May</option>
+                             <option value="June">June</option>
+                             <option value="July">July</option>
+                             <option value="August">August</option>
+                             <option value="September">September</option>
+                             <option value="October">October</option>
+                             <option value="November">November</option>
+                             <option value="December">December</option>
+                         </select>
+                         <label>Select year:</label>
+                         <select id="year" value="">
+                             <option value="2019">2019</option>
+                             <option value="2020">2020</option>
+                             <option value="2021">2021</option>
+                             <option value="2022">2022</option>
+                             <option value="2023">2023</option>
+                             <option value="2024">2024</option>
+                             <option value="2025">2025</option>
+                         </select>
+                        <input type="hidden" value="{{selectDate|date:'F Y'}}" name="startDate" id="startDate" class="date-picker" readonly/>
+                        <button name="queryMonth" class="btn btn-primary" type="submit" onclick="select_date()">Query</button>
+                    </form>
+            </div>
+    </div>       
+    <br>
+    <div class="row">
+        <div class="col-md-12 col-lg-12 col-sm-12">
+            <div class="clearfix">
+                    <label>Group: </label>
+                    <select id="listgroup" onchange="functionGroup()">
+                            {%for key, value in groups_dict.items%}
+                                {%if key == group %}
+                                    <option value="{{key}}" selected>{{key}}</option>
+                                {%else%}
+                                    <option value="{{key}}">{{key}}</option>
+                                {%endif%}
+                            {%endfor%}
+                    </select>
+                    <input id="myInput" type="text" placeholder="Search.." class="float-right">
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Members</th>
+                    <th>Task_Name</th>
+                    <th>Categories</th>
+                    <th style="width: 60px">Effort Est</th>
+                    <th>Start date</th>
+                    <th>Stop date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="tableTask">
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!--Test only-->
+<div>
+    <p id="testing"></p>
+</div>
+<!--end remove new task-->
+{{groups_dict|json_script:"groups_data"}}
+{{tasks_tracking_dict|json_script:"tasks_data"}}
+
+<script>
+    functionMember();
+
+    function functionGroup(){
+	/*
+        var value = JSON.parse(document.getElementById('groups_data').textContent);
+        var group = document.getElementById("listgroup").value;
+        var member = document.getElementById("listmember");
+        var table = document.getElementById("tableTask").innerHTML;
+        var temp = value[group];
+        var stringTemp = '';
+        for (x of temp){
+            stringTemp += "<option>"+x.username+"</option>"
+        }
+        member.innerHTML = stringTemp;*/
+		var table = document.getElementById("tableTask");
+        var rows = table.rows.length;
+        /*Remove rows existing*/
+        for (i=rows; i >= 1; i--){
+            table.deleteRow(i-1);
+        }
+        functionMember();
+    }
+
+    function functionMember(){
+        var valueTask = JSON.parse(document.getElementById('tasks_data').textContent);
+        var valueUser = JSON.parse(document.getElementById('groups_data').textContent);
+        var group = document.getElementById("listgroup").value;
+
+        var table = document.getElementById("tableTask");
+        var rows = table.rows.length
+
+        var user_list = valueUser[group];
+        for (user of user_list){
+            temp = valueTask[user.username];
+            for (x of temp){
+                var row = table.insertRow();
+                row.id = "row_"+x.taskid;
+                var Member = row.insertCell(0);
+                var Task_Name = row.insertCell(1);
+                var Categories = row.insertCell(2);
+                var Effort = row.insertCell(3);
+                var StartDate = row.insertCell(4);
+                var StopDate = row.insertCell(5);
+                var Status = row.insertCell(6);
+                Status.id = "status_"+x.taskid;
+
+                Member.innerHTML = "<td>"+user.username+"</td>";
+                Task_Name.innerHTML = "<td>"+x.taskName+"</td>";
+                Categories.innerHTML = "<td>"+x.categories+"</td>";
+                Effort.innerHTML = "<td>"+x.effort+"</td>";
+                StartDate.innerHTML = "<td>"+x.startdate+"</td>";
+                StopDate.innerHTML = "<td>"+x.stopdate+"</td>";
+                Status.innerHTML = "<td>"+Create_button(x.taskid, x.status, x.modify_status)+"</td>";
+
+                if(x.status == false){
+                    row.style.backgroundColor = "#ff80b3";
+                }
+                else{
+                    row.style.backgroundColor = "#80ff80";
+                }
+            }
+        }
+    }
+
+    function Create_button(taskid, status, modify_status){
+        if (status == false){
+            var button = '<a class="fa button_status" style="font-size:24px;color:red" onclick="loadStatus('+taskid+')">&#xf096;<sup>NEW</sup></a>';
+        }
+        else{
+            if(modify_status == true){
+                var button = '<a class="fa button_status" style="font-size:24px;color:#ff8533" onclick="loadStatus('+taskid+')">&#xf096;<sup>Update</sup></a>';
+            }
+            else{
+                var button = '<a class="fa fa-check-square-o button_status" style="font-size:24px;color:green" onclick="loadStatus('+taskid+')"></a>';
+            }
+        }
+        return button;
+    }
+    /*
+    function loadStatus(){
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function(){
+            if (this.readyState == 4 && this.status == 200){
+                console.log(this.responseText)
+            }
+        };
+        xhttp.open("Get", "/management/tasks_tracking/", true)
+        xhttp.send("task_id=1")
+    }
+    */
+   //Our code! ->Made by us!   
+</script>
+<script>
+    function loadStatus(task_id){
+        $.ajax({
+            url: '/management/tasks_tracking/',
+            data: {
+            'task_id': task_id
+            },
+            dataType: 'json',
+            type: 'POST',
+            success: function(data) {
+                $("#status_"+task_id).html(Create_button(data.task_id, data.status, data.modify_status));
+                if (data.status == false) {
+                    $("#row_"+task_id).css("background-color", "#ff80b3");
+                } else {
+                    $("#row_"+task_id).css("background-color", "#80ff80");
+                }
+            }
+        });
+    };
+</script>
+
+{% endblock %}
