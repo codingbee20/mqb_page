@@ -26,7 +26,6 @@ def delete_issue(ID):
     pass
 
 
-
 def troubleshoot_index(request):
     user_id = User.objects.get(username=request.user)
     return render(request,'troubleshoot_index.html', context)

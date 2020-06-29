@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'management',
     'homepage',
     'importdata',
-    'troubleshoot',
 ]
 
 MIDDLEWARE = [
